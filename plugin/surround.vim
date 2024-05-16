@@ -85,14 +85,22 @@ function! s:fixindent(str,spc)
   return str
 endfunction
 
-function! s:process(string)
+function! s:process(newnr,string)
   let i = 0
   for i in range(7)
     let repl_{i} = ''
     let m = matchstr(a:string,nr2char(i).'.\{-\}\ze'.nr2char(i))
     if m != ''
       let m = substitute(strpart(m,1),'\r.*','','')
-      let repl_{i} = input(match(m,'\w\+$') >= 0 ? m.': ' : m)
+      if exists("b:surround_complete_".a:newnr."_".string(i))
+        let com = b:surround_complete_{a:newnr}_{i}
+        let repl_{i} = input(match(m,'\w\+$') >= 0 ? m.': ' : m,"",com)
+      elseif exists("g:surround_complete_".a:newnr."_".string(i))
+        let com = g:surround_complete_{a:newnr}_{i}
+        let repl_{i} = input(match(m,'\w\+$') >= 0 ? m.': ' : m,"",com)
+      else
+        let repl_{i} = input(match(m,'\w\+$') >= 0 ? m.': ' : m)
+      endif
     endif
   endfor
   let s = ""
@@ -148,11 +156,11 @@ function! s:wrap(string,char,type,removed,special)
     let before = ''
     let after  = ''
   elseif exists("b:surround_".char2nr(newchar))
-    let all    = s:process(b:surround_{char2nr(newchar)})
+    let all    = s:process(char2nr(newchar),b:surround_{char2nr(newchar)})
     let before = s:extractbefore(all)
     let after  =  s:extractafter(all)
   elseif exists("g:surround_".char2nr(newchar))
-    let all    = s:process(g:surround_{char2nr(newchar)})
+    let all    = s:process(char2nr(newchar),g:surround_{char2nr(newchar)})
     let before = s:extractbefore(all)
     let after  =  s:extractafter(all)
   elseif newchar ==# "p"
